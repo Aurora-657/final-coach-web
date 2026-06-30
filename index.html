@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Final Coach - 面向大学生的智能期末规划系统</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <h1>Final Coach</h1>
+      <p>面向大学生的智能期末规划系统</p>
+    </div>
+  </header>
+
+  <nav class="tabs" aria-label="页面导航">
+    <button class="tab active" data-page="items">学业事项</button>
+    <button class="tab" data-page="calendar">日历视图</button>
+    <button class="tab" data-page="plan">今日计划</button>
+    <button class="tab" data-page="ai">AI任务</button>
+    <button class="tab" data-page="timer">番茄计时</button>
+    <button class="tab" data-page="stats">统计与数据</button>
+    <button id="undoBtn" class="ghost-button">撤回</button>
+  </nav>
+
+  <main>
+    <section id="items" class="page active">
+      <div class="toolbar grid-form">
+        <label>课程/事项
+          <input id="itemName" list="courseList" value="面向对象程序设计">
+          <datalist id="courseList"></datalist>
+        </label>
+        <label>类型
+          <select id="itemType">
+            <option value="考试">考试</option>
+            <option value="DDL">DDL</option>
+          </select>
+        </label>
+        <label>剩余天数
+          <input id="daysLeft" type="number" min="0" max="365" value="5">
+        </label>
+        <label>难度
+          <input id="difficulty" type="number" min="1" max="5" value="4">
+        </label>
+        <label>学分/耗时
+          <input id="weight" type="number" min="1" max="30" value="5">
+        </label>
+        <label>掌握
+          <input id="mastery" type="number" min="1" max="5" value="2">
+        </label>
+        <button id="addItemBtn">添加事项</button>
+        <button id="demoBtn">加载演示数据</button>
+        <button id="saveSnapshotBtn">保存到data</button>
+      </div>
+
+      <div class="section-title">
+        <h2>紧迫度排序</h2>
+        <button id="deleteItemBtn" class="danger-button">删除选中事项</button>
+      </div>
+      <div id="itemList" class="list"></div>
+    </section>
+
+    <section id="calendar" class="page">
+      <div class="section-title">
+        <h2>日历视图</h2>
+        <button id="refreshCalendarBtn">刷新日历</button>
+      </div>
+      <div id="calendarList" class="list calendar-list"></div>
+    </section>
+
+    <section id="plan" class="page">
+      <div class="toolbar">
+        <button id="generatePlanBtn">生成今日计划</button>
+        <button id="sprintBtn">开启冲刺模式</button>
+        <button id="exportPlanBtn">导出计划到exports</button>
+        <button id="deleteTaskBtn" class="danger-button">删除今日任务</button>
+      </div>
+      <div class="section-title">
+        <h2>今日计划</h2>
+      </div>
+      <div id="taskList" class="list task-list"></div>
+
+      <div class="toolbar manual-form">
+        <label>自写任务
+          <input id="manualTask" value="整理今天所有错题并标记不会的知识点">
+        </label>
+        <label>分钟
+          <input id="manualMinutes" type="number" min="10" max="600" value="40">
+        </label>
+        <button id="addManualTaskBtn">添加自写任务</button>
+      </div>
+
+      <div class="toolbar feedback-bar">
+        <span>反馈调整</span>
+        <button data-feedback="完成">完成</button>
+        <button data-feedback="太难">太难</button>
+        <button data-feedback="太简单">太简单</button>
+        <button data-feedback="太累">太累</button>
+        <button data-feedback="未完成">未完成</button>
+      </div>
+
+      <div class="advice-panel">
+        <h2>AI 建议</h2>
+        <p id="adviceText"></p>
+      </div>
+    </section>
+
+    <section id="ai" class="page">
+      <div class="toolbar ai-form">
+        <label>复习目标
+          <input id="goalInput" value="准备 面向对象程序设计 期末考试">
+        </label>
+        <button id="generateAiBtn">AI 生成任务</button>
+        <button id="deleteAiTaskBtn" class="danger-button">删除 AI 任务</button>
+      </div>
+      <div class="section-title">
+        <h2>AI 生成任务</h2>
+      </div>
+      <div id="aiTaskList" class="list task-list"></div>
+
+      <div class="toolbar feedback-bar">
+        <span>AI 任务反馈</span>
+        <button data-ai-feedback="完成">完成</button>
+        <button data-ai-feedback="太难">太难</button>
+        <button data-ai-feedback="太简单">太简单</button>
+        <button data-ai-feedback="太累">太累</button>
+        <button data-ai-feedback="未完成">未完成</button>
+      </div>
+    </section>
+
+    <section id="timer" class="page">
+      <div class="timer-layout">
+        <div class="timer-display" id="timerDisplay">专注 25:00 | 已完成番茄 0</div>
+        <div class="toolbar timer-form">
+          <label>当前任务
+            <select id="timerTaskSelect"></select>
+          </label>
+          <label>计时分钟
+            <input id="timerMinutes" type="number" min="1" max="240" value="25">
+          </label>
+          <button id="timerStartBtn">开始</button>
+          <button id="timerPauseBtn">暂停</button>
+          <button id="timerResetBtn">重置</button>
+          <button id="timerCompleteBtn">完成当前任务</button>
+        </div>
+        <div class="toolbar timer-form">
+          <label>临时任务
+            <input id="customTimerTask" value="背英语单词">
+          </label>
+          <button id="customTimerStartBtn">开始临时任务</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="stats" class="page">
+      <div class="toolbar">
+        <button id="refreshStatsBtn">刷新统计</button>
+        <button id="saveDataBtn">保存到data</button>
+        <button id="exportCsvBtn">导出CSV到exports</button>
+        <label class="file-button">导入CSV
+          <input id="importCsvInput" type="file" accept=".csv,text/csv">
+        </label>
+        <button id="clearDataBtn" class="danger-button">清空数据</button>
+      </div>
+      <pre id="statsText" class="stats-box"></pre>
+    </section>
+  </main>
+
+  <footer id="statusBar">当前页面：学业事项</footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
