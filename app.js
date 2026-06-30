@@ -843,6 +843,21 @@ function completeCurrentTimerTask() {
   timer.boundContent = "";
 }
 
+function buildTodayPlanExportText() {
+  const sortedTasks = [...state.tasks];
+  sortedTasks.sort((a, b) => {
+    if (b.priority !== a.priority) return b.priority - a.priority;
+    if (a.completed !== b.completed) return a.completed ? 1 : -1;
+    return 0;
+  });
+  return [
+    "Final Coach —— 面向大学生的智能期末规划系统",
+    "",
+    "一、今日计划",
+    ...(sortedTasks.length ? sortedTasks.map((task, index) => `${index + 1}. ${taskDisplay(task)}`) : ["暂无今日计划"])
+  ].join("\n");
+}
+
 function buildPlanText() {
   const sortedItems = [...state.items].sort((a, b) => urgency(b) - urgency(a));
   const sortedTasks = [...state.tasks];
@@ -885,9 +900,9 @@ function buildDataJson() {
 
 async function exportPlan() {
   const result = await saveTextToDirectory(
-    "exports",
-    `FinalCoach_plan_${timestamp()}.txt`,
-    buildPlanText(),
+    "data",
+    `今日计划-${timestamp()}.txt`,
+    buildTodayPlanExportText(),
     "text/plain;charset=utf-8"
   );
   setDirectorySaveStatus(result, "导出计划");
