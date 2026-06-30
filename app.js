@@ -890,14 +890,6 @@ function buildStatisticsReportText() {
   ].join("\n");
 }
 
-function buildDataJson() {
-  return JSON.stringify({
-    savedAt: new Date().toISOString(),
-    appName: "Final Coach",
-    state
-  }, null, 2);
-}
-
 async function exportPlan() {
   const result = await saveTextToDirectory(
     "data",
@@ -985,17 +977,6 @@ function setDirectorySaveStatus(result, actionName) {
   } else {
     setStatus(`已取消${actionName}。`);
   }
-}
-
-async function saveSnapshot() {
-  saveState();
-  const result = await saveTextToDirectory(
-    "data",
-    `FinalCoach_data_${timestamp()}.json`,
-    buildDataJson(),
-    "application/json;charset=utf-8"
-  );
-  setDirectorySaveStatus(result, "保存数据");
 }
 
 function clearData() {
@@ -1095,7 +1076,6 @@ function init() {
   });
 
   document.getElementById("refreshStatsBtn").addEventListener("click", renderStats);
-  document.getElementById("saveDataBtn").addEventListener("click", saveSnapshot);
   document.getElementById("exportStatsBtn").addEventListener("click", exportStatsReport);
   document.getElementById("clearDataBtn").addEventListener("click", clearData);
 
