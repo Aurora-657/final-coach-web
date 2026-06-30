@@ -18,7 +18,7 @@
     <button class="tab active" data-page="items">学业事项</button>
     <button class="tab" data-page="calendar">日历视图</button>
     <button class="tab" data-page="plan">今日计划</button>
-    <button class="tab" data-page="ai">AI任务</button>
+    <button class="tab" data-page="ai">AI助学</button>
     <button class="tab" data-page="timer">番茄计时</button>
     <button class="tab" data-page="stats">统计与数据</button>
     <button id="undoBtn" class="ghost-button">撤回</button>
@@ -51,7 +51,6 @@
         </label>
         <button id="addItemBtn">添加事项</button>
         <button id="demoBtn">加载演示数据</button>
-        <button id="saveSnapshotBtn">保存到data</button>
       </div>
 
       <div class="section-title">
@@ -112,20 +111,25 @@
           <input id="goalInput" value="准备 面向对象程序设计 期末考试">
         </label>
         <button id="generateAiBtn">AI 生成任务</button>
-        <button id="deleteAiTaskBtn" class="danger-button">删除 AI 任务</button>
+        <button id="deleteAiTaskBtn" class="danger-button">删除 AI 助学任务</button>
       </div>
       <div class="section-title">
-        <h2>AI 生成任务</h2>
+        <h2>AI 助学任务</h2>
       </div>
       <div id="aiTaskList" class="list task-list"></div>
 
       <div class="toolbar feedback-bar">
-        <span>AI 任务反馈</span>
+        <span>AI 助学反馈</span>
         <button data-ai-feedback="完成">完成</button>
         <button data-ai-feedback="太难">太难</button>
         <button data-ai-feedback="太简单">太简单</button>
         <button data-ai-feedback="太累">太累</button>
         <button data-ai-feedback="未完成">未完成</button>
+      </div>
+
+      <div class="advice-panel">
+        <h2>AI 陪学</h2>
+        <p id="aiCompanionText"></p>
       </div>
     </section>
 
@@ -157,10 +161,7 @@
       <div class="toolbar">
         <button id="refreshStatsBtn">刷新统计</button>
         <button id="saveDataBtn">保存到data</button>
-        <button id="exportCsvBtn">导出CSV到exports</button>
-        <label class="file-button">导入CSV
-          <input id="importCsvInput" type="file" accept=".csv,text/csv">
-        </label>
+        <button id="exportStatsBtn">导出数据统计</button>
         <button id="clearDataBtn" class="danger-button">清空数据</button>
       </div>
       <pre id="statsText" class="stats-box"></pre>

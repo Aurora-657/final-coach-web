@@ -57,6 +57,69 @@ let timer = {
   intervalId: null
 };
 
+const aiCompanionPhrases = {
+  "完成": [
+    "太棒了！这一步你已经稳稳拿下，状态越来越好！",
+    "完成就是最好的证明，你已经走在正确的路上了！",
+    "每一项任务的完成，都在把你推向更好的自己！",
+    "厉害！这种节奏保持住，今天会非常充实！",
+    "你已经证明了你能做到，接下来只会更顺畅！",
+    "每一次完成都值得被肯定，你真的很棒！",
+    "这一步走得漂亮，继续往前走，你已经上道了！",
+    "完成任务的那一刻，你就已经战胜了拖延！",
+    "你的执行力在提升，继续保持这种势头！",
+    "恭喜你！每一份付出都算数，今天离目标又近了一步！"
+  ],
+  "太难": [
+    "觉得难恰恰说明你在进步，舒适区外才是成长的地方！",
+    "你能坚持面对难题，这份勇气比解出答案更可贵！",
+    "难一点没关系，你本来就具备搞定它的能力！",
+    "每一个难题都是你弯道超车的机会，加油！",
+    "你已经在挑战自己了，这份努力绝对不会白费！",
+    "别怕难，你已经比昨天更强了，再试一次！",
+    "难题面前你没有退缩，这本身就是最大的胜利！",
+    "慢慢来，你的坚持会让这道题变得越来越简单！",
+    "能走到这一步，你已经比大多数人更勇敢了！",
+    "相信自己，你比你想象中的更有能力解决它！"
+  ],
+  "太简单": [
+    "这也太轻松了吧！说明你已经完全掌握了，真厉害！",
+    "对你来说这已经不够挑战了，准备升级吧！",
+    "行云流水！你的基础已经非常扎实了！",
+    "太简单了，说明你的进步速度超出了预期！",
+    "轻松拿下，继续保持这种自信的状态！",
+    "你已经超越了这一层，去挑战更高难度的吧！",
+    "这道题对你来说已经不够塞牙缝了，优秀！",
+    "你的能力已经肉眼可见地在增长了，真棒！",
+    "简单是因为你变强了，享受这种游刃有余的感觉吧！",
+    "太强了！你已经可以去做更难的题目了！"
+  ],
+  "太累": [
+    "你今天的努力已经被看见了，先休息一下，奖励自己！",
+    "学习需要张弛有度，累了就歇歇，回来状态更好！",
+    "你已经坚持了很久，这份毅力很了不起，先放松一下吧！",
+    "身体在提醒你需要充电，好好休息是为了走得更远！",
+    "你今天已经做了很多了，真的辛苦了，休息也是进步的一部分！",
+    "累了说明你足够认真，给自己一点时间恢复元气吧！",
+    "你很棒了！现在休息不是放弃，而是为了更好地冲刺！",
+    "大脑需要一点 refresh，起来走走，你已经够拼了！",
+    "别硬撑，照顾好自己，你已经做得很出色了！",
+    "休息时间到！你值得一个短暂的放松，回来后继续发光！"
+  ],
+  "未完成": [
+    "没关系，未完成不代表失败，你已经开始了就是胜利！",
+    "每一次尝试都在累积经验，剩下的部分很快就搞定！",
+    "别气馁，你离完成只差最后一步，再加把劲！",
+    "未完成的进度也是进度，你今天并没有白费！",
+    "你已经迈出最艰难的第一步了，剩下的只需继续走下去！",
+    "别让未完成打击到你，换个角度，你已经走在路上了！",
+    "你完全有能力把它完成，给自己一点信心！",
+    "今天没完成不要紧，明天继续，你已经很棒了！",
+    "没有完美只有进步，你的每一次努力都算数！",
+    "未完成只是暂时的，你的坚持一定会让它画上句号！"
+  ]
+};
+
 class AcademicItem {
   constructor(data) {
     this.name = data.name;
@@ -132,13 +195,27 @@ class ReviewTaskModel {
 }
 
 function defaultState() {
-  return { items: [], tasks: [], aiTasks: [], sprintMode: false };
+  return {
+    items: [],
+    tasks: [],
+    aiTasks: [],
+    sprintMode: false,
+    aiCompanionMessage: "选中一条 AI 助学任务并点击反馈后，这里会生成一句鼓励你的陪学提醒。"
+  };
 }
 
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : defaultState();
+    if (!raw) return defaultState();
+    const parsed = JSON.parse(raw);
+    return {
+      ...defaultState(),
+      ...parsed,
+      items: Array.isArray(parsed.items) ? parsed.items : [],
+      tasks: Array.isArray(parsed.tasks) ? parsed.tasks : [],
+      aiTasks: Array.isArray(parsed.aiTasks) ? parsed.aiTasks : []
+    };
   } catch {
     return defaultState();
   }
@@ -242,12 +319,42 @@ function sortTasks(tasks) {
   });
 }
 
+function calendarEntryLabel(item) {
+  if (item.type === "DDL") {
+    return item.name.includes("DDL") ? item.name : `${item.name} DDL`;
+  }
+  return item.name.includes("期末考试") ? item.name : `${item.name} 期末考试`;
+}
+
+function formatAcademicItemLine(item) {
+  const weightText = item.type === "DDL" ? `耗时:${item.weight}小时` : `学分:${item.weight}`;
+  return `[${item.type}] ${item.name} | 剩余:${item.daysLeft}天 | 难度:${item.difficulty} | ${weightText} | 掌握:${item.mastery} | 紧迫度:${urgency(item).toFixed(2)}`;
+}
+
+function formatTaskLine(task) {
+  return `[优先级:${task.priority}] ${task.subject} | 任务:${task.content} | 时间:${task.minutes}分钟 | 番茄:${task.finishedPomodoros}/${task.requiredPomodoros} | 状态:${task.completed ? "已完成" : "待完成"}`;
+}
+
+function buildStatisticsSummaryLines() {
+  const completedTasks = state.tasks.filter(task => task.completed).length;
+  const completedAiTasks = state.aiTasks.filter(task => task.completed).length;
+  const totalMinutes = [...state.tasks, ...state.aiTasks].reduce((sum, task) => sum + task.minutes, 0);
+  return [
+    `学业事项数量：${state.items.length}`,
+    `今日计划任务数量：${state.tasks.length}`,
+    `AI 生成任务数量：${state.aiTasks.length}`,
+    `已完成任务数量：${completedTasks + completedAiTasks}`,
+    `预计总分钟数：${totalMinutes}`,
+    `当前模式：${state.sprintMode ? "冲刺模式" : "普通模式"}`
+  ];
+}
+
 function itemDisplay(item) {
-  return createAcademicItem(item).toDisplayString();
+  return formatAcademicItemLine(item);
 }
 
 function taskDisplay(task) {
-  return new ReviewTaskModel(task).toDisplayString();
+  return formatTaskLine(task);
 }
 
 function renderList(containerId, items, selectedIndex, onSelect, emptyText, renderer) {
@@ -294,23 +401,22 @@ function renderCalendar() {
   const grouped = new Map();
   state.items.forEach(item => {
     const date = targetDate(item.daysLeft);
-    const label = item.type === "DDL"
-      ? `- ${item.name} DDL`
-      : `- ${item.name.includes("考试") ? item.name : `${item.name} 期末考试`}`;
     if (!grouped.has(date)) grouped.set(date, []);
-    grouped.get(date).push(label);
+    grouped.get(date).push(item);
   });
   [...grouped.keys()].sort().forEach(date => {
     const dateRow = document.createElement("div");
     dateRow.className = "row calendar-date";
     dateRow.textContent = date;
     container.appendChild(dateRow);
-    grouped.get(date).forEach(line => {
+    grouped.get(date)
+      .sort((a, b) => urgency(b) - urgency(a))
+      .forEach((item, index) => {
       const row = document.createElement("div");
       row.className = "row";
-      row.textContent = line;
+      row.textContent = `${index + 1}. ${calendarEntryLabel(item)}`;
       container.appendChild(row);
-    });
+      });
   });
 }
 
@@ -325,30 +431,22 @@ function renderAiTasks() {
   renderList("aiTaskList", state.aiTasks, selectedAiTask, index => {
     selectedAiTask = index;
     selectedTask = -1;
-  }, "暂无 AI 生成任务。输入目标后点击“AI 生成任务”。", taskDisplay);
+  }, "暂无 AI 助学任务。输入目标后点击“AI 生成任务”。", taskDisplay);
 }
 
 function renderAdvice() {
   document.getElementById("adviceText").textContent = generateAdvice();
 }
 
+function renderAiCompanion() {
+  document.getElementById("aiCompanionText").textContent = state.aiCompanionMessage;
+}
+
 function renderStats() {
-  const completedTasks = state.tasks.filter(t => t.completed).length;
-  const completedAi = state.aiTasks.filter(t => t.completed).length;
-  const totalMinutes = [...state.tasks, ...state.aiTasks].reduce((sum, task) => sum + task.minutes, 0);
-  const top = [...state.items].sort((a, b) => urgency(b) - urgency(a)).slice(0, 3);
   const lines = [
     "数据统计",
     "",
-    `学业事项数量：${state.items.length}`,
-    `今日计划任务数量：${state.tasks.length}`,
-    `AI 生成任务数量：${state.aiTasks.length}`,
-    `已完成任务数量：${completedTasks + completedAi}`,
-    `预计总分钟数：${totalMinutes}`,
-    `当前模式：${state.sprintMode ? "冲刺模式" : "普通模式"}`,
-    "",
-    "紧迫度 Top 列表",
-    ...(top.length ? top.map(item => `- ${itemDisplay(item)}`) : ["- 暂无学业事项"])
+    ...buildStatisticsSummaryLines()
   ];
   document.getElementById("statsText").textContent = lines.join("\n");
 }
@@ -382,6 +480,7 @@ function renderAll() {
   renderTasks();
   renderAiTasks();
   renderAdvice();
+  renderAiCompanion();
   renderStats();
   renderTimerTasks();
   renderTimer();
@@ -619,6 +718,15 @@ function adjustMastery(subject, delta) {
   });
 }
 
+function pickRandomAiCompanionMessage(feedback) {
+  const messages = aiCompanionPhrases[feedback];
+  if (!messages || !messages.length) {
+    return "继续保持节奏，你离目标又近了一点。";
+  }
+  const index = Math.floor(Math.random() * messages.length);
+  return messages[index];
+}
+
 function handleFeedback(feedback, isAi = false) {
   const list = isAi ? state.aiTasks : state.tasks;
   const selected = isAi ? selectedAiTask : selectedTask;
@@ -628,6 +736,9 @@ function handleFeedback(feedback, isAi = false) {
   }
   rememberUndo();
   applyFeedback(list[selected], feedback);
+  if (isAi) {
+    state.aiCompanionMessage = pickRandomAiCompanionMessage(feedback);
+  }
   saveState();
   renderAll();
   setStatus(`已应用反馈：${feedback}`);
@@ -733,29 +844,35 @@ function completeCurrentTimerTask() {
 }
 
 function buildPlanText() {
+  const sortedItems = [...state.items].sort((a, b) => urgency(b) - urgency(a));
+  const sortedTasks = [...state.tasks];
+  const sortedAiTasks = [...state.aiTasks];
+  sortTasks(sortedTasks);
+  sortTasks(sortedAiTasks);
   return [
     "Final Coach —— 面向大学生的智能期末规划系统",
     "",
     "一、学业事项",
-    ...(state.items.length ? state.items.map(item => `- ${itemDisplay(item)}`) : ["- 暂无学业事项"]),
+    ...(sortedItems.length ? sortedItems.map(item => `- ${itemDisplay(item)}`) : ["- 暂无学业事项"]),
     "",
     "二、今日计划",
-    ...(state.tasks.length ? state.tasks.map(task => `- ${taskDisplay(task)}`) : ["- 暂无今日计划"]),
+    ...(sortedTasks.length ? sortedTasks.map(task => `- ${taskDisplay(task)}`) : ["- 暂无今日计划"]),
     "",
     "三、AI 生成任务",
-    ...(state.aiTasks.length ? state.aiTasks.map(task => `- ${taskDisplay(task)}`) : ["- 暂无 AI 生成任务"]),
+    ...(sortedAiTasks.length ? sortedAiTasks.map(task => `- ${taskDisplay(task)}`) : ["- 暂无 AI 生成任务"]),
     "",
     "四、AI 建议",
     generateAdvice()
   ].join("\n");
 }
 
-function buildCsvText() {
-  const rows = [["类型", "名称", "剩余天数", "难度", "学分或耗时", "掌握程度", "紧迫度"]];
-  state.items.forEach(item => {
-    rows.push([item.type, item.name, item.daysLeft, item.difficulty, item.weight, item.mastery, urgency(item).toFixed(2)]);
-  });
-  return rows.map(row => row.map(csvEscape).join(",")).join("\n");
+function buildStatisticsReportText() {
+  return [
+    buildPlanText(),
+    "",
+    "数据统计：",
+    ...buildStatisticsSummaryLines()
+  ].join("\n");
 }
 
 function buildDataJson() {
@@ -776,19 +893,14 @@ async function exportPlan() {
   setDirectorySaveStatus(result, "导出计划");
 }
 
-async function exportCsv() {
+async function exportStatsReport() {
   const result = await saveTextToDirectory(
     "exports",
-    `FinalCoach_items_${timestamp()}.csv`,
-    buildCsvText(),
-    "text/csv;charset=utf-8"
+    `数据统计-${timestamp()}.txt`,
+    buildStatisticsReportText(),
+    "text/plain;charset=utf-8"
   );
-  setDirectorySaveStatus(result, "导出CSV");
-}
-
-function csvEscape(value) {
-  const text = String(value);
-  return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+  setDirectorySaveStatus(result, "导出数据统计");
 }
 
 function downloadText(filename, content, type) {
@@ -871,55 +983,6 @@ async function saveSnapshot() {
   setDirectorySaveStatus(result, "保存数据");
 }
 
-function importCsv(file) {
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    rememberUndo();
-    const lines = String(reader.result).replace(/^\ufeff/, "").split(/\r?\n/).filter(Boolean);
-    lines.slice(1).forEach(line => {
-      const parts = parseCsvLine(line);
-      if (parts.length < 6) return;
-      state.items.push({
-        type: parts[0] === "DDL" ? "DDL" : "考试",
-        name: parts[1],
-        daysLeft: clamp(parts[2], 0, 365),
-        difficulty: clamp(parts[3], 1, 5),
-        weight: clamp(parts[4], 1, 30),
-        mastery: clamp(parts[5], 1, 5)
-      });
-    });
-    saveState();
-    renderAll();
-    setStatus("CSV 导入完成。");
-  };
-  reader.readAsText(file, "utf-8");
-}
-
-function parseCsvLine(line) {
-  const result = [];
-  let current = "";
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i += 1) {
-    const ch = line[i];
-    if (ch === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"';
-        i += 1;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (ch === "," && !inQuotes) {
-      result.push(current);
-      current = "";
-    } else {
-      current += ch;
-    }
-  }
-  result.push(current);
-  return result;
-}
-
 function clearData() {
   if (!confirm("确定要清空所有事项、今日计划和 AI 任务吗？")) return;
   rememberUndo();
@@ -962,7 +1025,6 @@ function init() {
 
   document.getElementById("addItemBtn").addEventListener("click", addItem);
   document.getElementById("demoBtn").addEventListener("click", loadDemoData);
-  document.getElementById("saveSnapshotBtn").addEventListener("click", saveSnapshot);
   document.getElementById("deleteItemBtn").addEventListener("click", deleteItem);
   document.getElementById("refreshCalendarBtn").addEventListener("click", renderCalendar);
   document.getElementById("generatePlanBtn").addEventListener("click", generateTodayPlan);
@@ -1019,8 +1081,7 @@ function init() {
 
   document.getElementById("refreshStatsBtn").addEventListener("click", renderStats);
   document.getElementById("saveDataBtn").addEventListener("click", saveSnapshot);
-  document.getElementById("exportCsvBtn").addEventListener("click", exportCsv);
-  document.getElementById("importCsvInput").addEventListener("change", event => importCsv(event.target.files[0]));
+  document.getElementById("exportStatsBtn").addEventListener("click", exportStatsReport);
   document.getElementById("clearDataBtn").addEventListener("click", clearData);
 
   renderAll();
